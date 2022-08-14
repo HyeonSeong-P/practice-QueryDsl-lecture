@@ -124,6 +124,9 @@ public class QuerydslBasicTest {
      *  - 결과가 둘 이상이면: com.querydsl.core.NonUniqueResultException
      *
      * - fetchFirst(): limit(1).fetchOne()
+     *
+     * - fetchResults 와 fetchCount는 deprecated 됐는데 복잡한 쿼리(다중그룹 쿼리)에선 count 쿼리가 잘 동작하지 않기 때문
+     *  - 따라서 강의에서 여러번 들은 것처럼 count 쿼리는 따로 짜는 게 좋을 듯 하다.
      */
     @Test
     public void resultFetch(){
@@ -169,4 +172,20 @@ public class QuerydslBasicTest {
         assertThat(member6.getUsername()).isEqualTo("member6");
         assertThat(memberNull.getUsername()).isNull();
     }
+
+    /**
+     * jpql과 유사하게 offset과 limit을 활용하여 페이징
+     */
+    @Test
+    public void paging(){ // count 쿼리는 조인이 필요 없는 경우 따로 짜는 게 좋다.
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetch();
+
+        assertThat(result.size()).isEqualTo(2);
+    }
+
 }
