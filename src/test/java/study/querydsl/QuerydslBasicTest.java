@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,8 @@ import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.*;
@@ -85,7 +88,7 @@ public class QuerydslBasicTest {
 
     /**
      * 검색 조건 쿼리
-     * 다음과 같이 JPQL이 제공하는 모든 검색 조건을 제공한다. 
+     * 다음과 같이 JPQL이 제공하는 모든 검색 조건을 제공한다.
      * member.username.eq("member1") // username = 'member1'
      * member.username.ne("member1") //username != 'member1'
      * member.username.eq("member1").not() // username != 'member1'
@@ -111,5 +114,32 @@ public class QuerydslBasicTest {
                 .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    /**
+     * - fetch(): 리스트 조회, 데이터 없으면 빈 리스트 반환
+     *
+     * - fetchOne(): 단 건 조회
+     *  - 결과가 없으면: null
+     *  - 결과가 둘 이상이면: com.querydsl.core.NonUniqueResultException
+     *
+     * - fetchFirst(): limit(1).fetchOne()
+     */
+    @Test
+    public void resultFetch(){
+        // List
+        List<Member> fetch = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        // 단 건
+        Member fetchOne = queryFactory
+                .selectFrom(QMember.member)
+                .fetchOne();
+
+        // 처음 한 건 조회
+        Member fetchFirst = queryFactory
+                .selectFrom(QMember.member)
+                .fetchFirst();
     }
 }
