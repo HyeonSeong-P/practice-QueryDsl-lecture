@@ -15,6 +15,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import static org.assertj.core.api.Assertions.*;
+import static study.querydsl.entity.QMember.*;
 
 @SpringBootTest
 @Transactional
@@ -64,7 +65,9 @@ public class QuerydslBasicTest {
 
     @Test
     public void startQuerydsl(){
-        QMember m = new QMember("m"); // 어떤 QMember인지 구분하는 별칭을 줘야 함, 하지만 이후엔 만들어진 것을 쓸것.
+        // 어떤 QMember인지 구분하는 별칭을 줘야 함, 하지만 이후엔 만들어진 것을 쓸것.
+        // 같은 테이블을 조인할 경우에만 이런 식으로 선언해서 사용하자. 아니면 아래 예제에서 볼 수 있듯이 기본 인스턴스 활용
+        //QMember m = new QMember("m");
 
         /**
          * 문자로 작성하는 JPQL과 달리 런타임 시점에서 오류를 잡는게 아니라
@@ -72,9 +75,9 @@ public class QuerydslBasicTest {
          * 또한 파라미터 바인딩을 자동 처리해준다.
          */
         Member findMember = queryFactory
-                .select(m)
-                .from(m)
-                .where(m.username.eq("member1")) // 파라미터 바인딩 처리리
+                .select(member) // 기본 인스턴스(QMember.member)를 static import와 함께 사용, 이 방법을 권장
+                .from(member)
+                .where(member.username.eq("member1")) // 파라미터 바인딩 처리리
                .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
