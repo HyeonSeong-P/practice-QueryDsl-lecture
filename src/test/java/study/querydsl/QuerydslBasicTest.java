@@ -1,7 +1,9 @@
 package study.querydsl;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -494,6 +496,7 @@ public class QuerydslBasicTest {
 
     /**
      * orderBy에서 Case문 함께 사용하기
+     *
      * 예) 다음과 같은 임의의 순서로 회원을 출력
      * 1. 0~30살이 아닌 회원을 가장 먼저 출력
      * 2. 0~20살 회원 출력
@@ -517,6 +520,39 @@ public class QuerydslBasicTest {
         for (Tuple tuple:result){
             System.out.println("username = " + tuple.get(member.username) +
                     " age = " + tuple.get(member.age) + " rank = " + tuple.get(rankPath));
+        }
+    }
+
+    /**
+     * 상수가 필요하면 Expressions.constant(~~) 사용
+     */
+    @Test
+    public void constant(){
+        List<Tuple> fetch = queryFactory
+                .select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+
+        for(Tuple tuple: fetch){
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+    /**
+     * 문자 더하기
+     * 참고: 문자가 아닌 다른 타입들은 stringValue()로 문자로 변환 가능. 이 방법은 ENUM을 처리할 때도 자주 사용한다.
+     */
+    @Test
+    public void concat(){
+        //{username}_{age}
+        List<String> fetch = queryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetch();
+
+        for(String string: fetch){
+            System.out.println("string = " + string);
         }
     }
 
