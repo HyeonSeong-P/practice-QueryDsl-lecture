@@ -1,6 +1,8 @@
 package study.querydsl;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -454,4 +456,68 @@ public class QuerydslBasicTest {
             System.out.println("username = " + tuple.get(member.username));
         }
     }
+
+
+    /**
+     * [case문]
+     * case문을 사용하여 효율적으로 처리할 상황이 있다.
+     * 하지만 아래 예제와 같은 경우는 애플리케이션 로직에서 수행하는 것이 알맞다.
+     */
+    @Test
+    public void basicAndComplexCase(){
+        //basic case
+        List<String> fetch = queryFactory
+                .select(member.age
+                        .when(10).then("열살")
+                        .when(20).then("스무살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for(String string: fetch){
+            System.out.println("string = " + string);
+        }
+
+        //complex case
+        List<String> fetch2 = queryFactory
+                .select(new CaseBuilder()
+                        .when(member.age.between(0,20)).then("0~20살")
+                        .when(member.age.between(21,30)).then("21~30살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for(String string: fetch2){
+            System.out.println("string = " + string);
+        }
+    }
+
+    /**
+     * orderBy에서 Case문 함께 사용하기
+     * 예) 다음과 같은 임의의 순서로 회원을 출력
+     * 1. 0~30살이 아닌 회원을 가장 먼저 출력
+     * 2. 0~20살 회원 출력
+     * 3. 21~30살 회원 출력
+     *
+     * Querydsl은 자바 코드로 작성하기 때문에 rnakPath처럼 복잡한 고전을 변수로 선언해서 select절, orderBy절에서 함께 사용할 수 있다.
+     */
+    @Test
+    public void orderByWithCase(){
+        NumberExpression<Integer> rankPath = new CaseBuilder()
+                .when(member.age.between(0,20)).then(2)
+                .when(member.age.between(0,20)).then(1)
+                .otherwise(3);
+
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age, rankPath)
+                .from(member)
+                .orderBy(rankPath.desc())
+                .fetch();
+
+        for (Tuple tuple:result){
+            System.out.println("username = " + tuple.get(member.username) +
+                    " age = " + tuple.get(member.age) + " rank = " + tuple.get(rankPath));
+        }
+    }
+
 }
