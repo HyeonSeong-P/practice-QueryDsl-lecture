@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.QMemberDto;
@@ -803,4 +804,63 @@ public class QuerydslBasicTest {
     }
 
 
+    /**
+     * [수정, 삭제 벌크 연산]
+     * bulkUpdate(): 쿼리 한 번으로 대량 데이터 수정
+     * bulkAdd(): 기존 숫자에 1 더하기
+     * bulkDelete(): 쿼리 한 번으로 대량 데이터 삭제
+     *
+     * 주의: JPQL 배치와 마찬가지로, 영속성 컨텍스트에 있는 엔티티를 무시하고 실행되기 때문에 배치 쿼리를 실행하고 나면
+     *      영속성 컨텍스트를 초기화하는 것이 안전하다.
+     */
+    @Test
+    @Commit
+    public void bulkUpdate(){
+        //member1 = 10 -> DB member1 | 영속성 컨텍스트 member1
+        //member2 = 20 -> DB member2 | 영속성 컨텍스트 member2
+        //member3 = 30 -> DB member3 | 영속성 컨텍스트 member3
+        //member4 = 40 -> DB member4 | 영속성 컨텍스트 member4
+
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        em.flush();
+        em.clear();
+
+        // 수정, 삭제 벌크 연산의 경우 영속성 컨텍스트를 변경하지 않고 바로 DB로 반영하기 때문에
+        // 영속성 컨텍스트를 초기화 안했을 경우 DB와 영속성 컨텍스트의 data가 달라 예상치 못한 상황이 발생할 수 있으니
+        // 벌크 연산 이후 쿼리를 수행할 경우우 영속성 컨텍트를 꼭 초기화 하자!
+        //member1 = 10 -> DB 비회원   | 영속성 컨텍스트 member1
+        //member2 = 20 -> DB 비회원   |영속성 컨텍스트 member2
+        //member3 = 30 -> DB member3 | 영속성 컨텍스트 member3
+        //member4 = 40 -> DB member4 | 영속성 컨텍스트 member4
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @Test
+    public void bulkAdd(){
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1)) // 곱하기는 multiply(x)
+                .execute();
+    }
+
+
+    @Test
+    public void bulkDelete(){
+        long count = queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
+    }
 }
