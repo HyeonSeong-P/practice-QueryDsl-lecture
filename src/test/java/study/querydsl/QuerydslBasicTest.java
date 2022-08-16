@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -14,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -596,4 +600,101 @@ public class QuerydslBasicTest {
         }
     }
 
+
+    /**
+     * 순수 JPA에서 DTO 조회 코드
+     * - 순수 JPA에서 DTO를 조회할 땐 new 명령어를 사용해야 함
+     * - DTO의 package 이름을 다 적어줘야 해서 지저분함
+     * - 생성자 방식만 지원함
+     */
+    @Test
+    public void findDtoByJPQL(){
+        List<Member> result = em.createQuery("select new study.querydsl.dto.MemberDto(m.username,m.age) from Member m", Member.class)
+                .getResultList();
+
+        result.forEach(memberDto -> {
+            System.out.println("memberDto = " + memberDto);
+        });
+    }
+
+    /**
+     * Querydsl을 사용한 DTO 조회 코드
+     * 1. 프로퍼티 접근 - Setter 사용
+     * 2. 필드 직접 접근
+     * 3. 생성자 사용
+     */
+    @Test
+    public void findDtoBySetter(){
+        // 대상 클래스(MemberDto)에 기본 생성자가 존재해야 오류가 발생하지 않는다.
+        List<MemberDto> result = queryFactory
+                .select(Projections.bean(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    public void findDtoByField(){
+        // 대상 클래스(MemberDto)에 기본 생성자가 존재해야 함.
+        List<MemberDto> result = queryFactory
+                .select(Projections.fields(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    public void findDtoByConstructor(){
+        // 대상 클래스(MemberDto)에 기본 생성자가 존재해야 함.
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    /**
+     * 엔티티와 DTO 간 별칭이 다를 때
+     */
+    @Test
+    public void findUserDto(){
+        // 필드에 별칭 적용 -> member.username.as("name")
+        List<UserDto> result = queryFactory
+                .select(Projections.constructor(UserDto.class,
+                        member.username.as("name"),
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : result) {
+            System.out.println("userDto = " + userDto);
+        }
+
+        // 필드나 서브 쿼리에 별칭 적용 -> ExpressionUtils.as({source}, {alias})
+        // 조금 억지스러운 예제긴 하지만 이 기능을 보여주기 위함이다.
+        QMember memberSub = new QMember("memberSub");
+        List<UserDto> result2 = queryFactory
+                .select(Projections.constructor(UserDto.class,
+                        member.username.as("name"),
+                        ExpressionUtils.as(JPAExpressions
+                                .select(memberSub.age.max())
+                                .from(memberSub), "age")))
+                .from(member)
+                .fetch();
+    }
 }

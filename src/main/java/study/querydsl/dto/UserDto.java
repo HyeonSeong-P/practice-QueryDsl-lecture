@@ -5,12 +5,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class MemberDto {
-    private String username;
+public class UserDto {
+    private String name;
     private int age;
 
-    public MemberDto(String username, int age) {
-        this.username = username;
+    public UserDto(String name, int age) {
+        this.name = name;
         this.age = age;
     }
 }
