@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.QMemberDto;
 import study.querydsl.dto.UserDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
@@ -696,5 +697,33 @@ public class QuerydslBasicTest {
                                 .from(memberSub), "age")))
                 .from(member)
                 .fetch();
+    }
+
+
+    /**
+     * [생성자 + @QueryProjection 을 사용한 DTO 조회]
+     *
+     * 사용 방법
+     * 1. 대상 클래스의 생성자에 @QueryProjection 어노테이션을 추가한다.
+     * 2. gradle에서 compileQuerydsl을 실행해 Q타입 클래스를 생성한 후 아래와 같이 사용한다.
+     *
+     * 장점
+     * - 앞서 확인한 Querydsl Projections.constructor를 이용한 Dto 조회는 런타임에 오류를 잡을 수 있지만
+     *   이 방식의 경우 컴파일 타임에 오류를 잡을 수 있다
+     *
+     * 단점
+     * - 다만 DTO에 QueryDSL 어노테이션을 유지해야 하는 점(DTO가 Querydsl에 종속된다)과
+     *   DTO까지 Q파일을 생성해야 하는 단점이 있다.
+     */
+    @Test
+    public void findDtoByQueryProjection(){
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
     }
 }
