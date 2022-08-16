@@ -4,7 +4,9 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -752,8 +754,53 @@ public class QuerydslBasicTest {
             builder.and(member.username.eq(usernameParam));
         }
         return queryFactory
-                .select(member)
+                .selectFrom(member)
                 .where()
                 .fetch();
     }
+
+    /**
+     * 동적 쿼리 - Where 다중 파라미터 사용
+     *
+     * - 이 방법이 위 방법보다 훨씬 깔끔하고 직관적이다.(가독성이 높아진다.)
+     * - extract한 메서드들을 조합하면서 다른 쿼리에서도 재활용할 수 있다.
+     * - where 조건에 null 값은 무시된다.
+     */
+    @Test
+    public void dynamicQuery_WhereParam(){
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember2(usernameParam, ageParam);
+        assertThat(result.size()).isEqualTo(1);
+
+    }
+
+    private List<Member> searchMember2(String usernameParam, Integer ageParam) {
+        return queryFactory
+                .selectFrom(member)
+                .where(usernameEq(usernameParam), ageEq(ageParam)) // 반환 값이 null이면 무시한다.
+                //.where(allEq(usernameParam,ageParam))
+                .fetch();
+    }
+
+
+
+    private BooleanExpression usernameEq(String usernameParam) {
+        return usernameParam == null ? null : member.username.eq(usernameParam);
+    }
+
+    private BooleanExpression ageEq(Integer ageParam) {
+        return ageParam == null ? null : member.age.eq(ageParam);
+    }
+
+    /**
+     * return 타입을 BooleanExpression으로 설정하면 다른 BooleanExpression과 조합 가능!!
+     * 하지만 이 같이 조합할 경우 null 처리를 따로 해줘야 한다.
+     */
+    private BooleanExpression allEq(String usernameParam, Integer ageParam){
+        return usernameEq(usernameParam).and(ageEq(ageParam));
+    }
+
+
 }
