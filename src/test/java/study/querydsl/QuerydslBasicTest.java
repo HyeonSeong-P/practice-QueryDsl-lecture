@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
@@ -725,5 +726,34 @@ public class QuerydslBasicTest {
         for (MemberDto memberDto : result) {
             System.out.println("memberDto = " + memberDto);
         }
+    }
+
+    /**
+     * 동적 쿼리 - BooleanBuilder 사용
+     */
+    @Test
+    public void dynamicQuery_BooleanBuilder(){
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+        
+        List<Member> result = searchMember1(usernameParam, ageParam);
+        assertThat(result.size()).isEqualTo(1);
+        
+    }
+
+    private List<Member> searchMember1(String usernameParam, Integer ageParam) {
+        // 특정 파라미터를 필수로 주고 싶다면 아래와 같이 초깃값을 넣어도 된다
+        //BooleanBuilder builder = new BooleanBuilder(member.username.eq(usernameParam));
+        BooleanBuilder builder = new BooleanBuilder();
+        if(usernameParam != null){
+            builder.and(member.username.eq(usernameParam));
+        }
+        if(usernameParam != null){
+            builder.and(member.username.eq(usernameParam));
+        }
+        return queryFactory
+                .select(member)
+                .where()
+                .fetch();
     }
 }
