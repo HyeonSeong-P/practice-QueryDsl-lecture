@@ -70,14 +70,17 @@ class MemberJpaRepositoryTest {
         em.persist(member4);
 
         MemberSearchCondition memberSearchCondition = new MemberSearchCondition();
-        
+
         // 조건이 아무것도 없을 경우 모든 데이터를 끌어 오게 되면서 성능 이슈가 발생할 수 있다.
         // 따라서 기본 조건을 걸거나 페이징을 추가하자.
         memberSearchCondition.setAgeGoe(35);
         memberSearchCondition.setAgeLoe(40);
         memberSearchCondition.setTeamName("teamB");
 
-        List<MemberTeamDto> result = memberJpaRepository.searchByBuilder(memberSearchCondition);
+        //List<MemberTeamDto> result = memberJpaRepository.searchByBuilder(memberSearchCondition);
+
+        // 코드 재사용성과 가독성 때문에 where 절 파라미터를 이용한 동적쿼리가 많이 쓰이지만 Builder가 쓰일 때도 있다.
+        List<MemberTeamDto> result = memberJpaRepository.searchByWhere(memberSearchCondition);
 
         assertThat(result).extracting("username").containsExactly("member4");
     }
