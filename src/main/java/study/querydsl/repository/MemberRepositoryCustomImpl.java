@@ -49,6 +49,30 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom{
 
     @Override
     public Page<MemberTeamDto> searchPage(MemberSearchCondition condition, Pageable pageable) {
+        List<MemberTeamDto> content = getMemberTeamDtos(condition, pageable);
+
+        long total = getTotal(condition);
+
+        return new PageImpl<>(content, pageable, total);
+
+    }
+
+    private long getTotal(MemberSearchCondition condition) {
+        long total = queryFactory
+                .select(member.count())
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(condition.getUsername()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLoe(condition.getAgeLoe())
+                )
+                .fetch().size();
+        return total;
+    }
+
+    private List<MemberTeamDto> getMemberTeamDtos(MemberSearchCondition condition, Pageable pageable) {
         List<MemberTeamDto> content = queryFactory
                 .select(new QMemberTeamDto(
                         member.id.as("memberId"),
@@ -68,21 +92,7 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom{
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
-
-        long total = queryFactory
-                .select(member.count())
-                .from(member)
-                .leftJoin(member.team, team)
-                .where(
-                        usernameEq(condition.getUsername()),
-                        teamNameEq(condition.getTeamName()),
-                        ageGoe(condition.getAgeGoe()),
-                        ageLoe(condition.getAgeLoe())
-                )
-                .fetch().size();
-
-        return new PageImpl<>(content, pageable, total)
-
+        return content;
     }
 
     private BooleanExpression ageLoe(Integer ageLoe) {
